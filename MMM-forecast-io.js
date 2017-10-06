@@ -18,6 +18,7 @@ Module.register("MMM-forecast-io", {
     longitude: null,
     showSummary: true,
     showForecast: true,
+    maxDaysForecast: 7,
     showPrecipitationGraph: true,
     precipitationGraphWidth: 400,
     showWind: true,
@@ -433,7 +434,7 @@ Module.register("MMM-forecast-io", {
   },
 
   renderWeatherForecast: function () {
-    var numDays =  7;
+    var numDays =  this.config.maxDaysForecast;
     var i;
 
     var filteredDays =
