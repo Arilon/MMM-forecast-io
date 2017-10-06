@@ -264,18 +264,6 @@ Module.register("MMM-forecast-io", {
     }
     context.restore();
 
-// ===== 6hr tick lines
-    var tickCount = Math.round(width / (stepSize*6));
-    context.save();
-    context.strokeStyle = 'gray';
-    context.lineWidth = 2;
-    for (i = 1; i < tickCount; i++) {             
-      context.moveTo(i * (stepSize*6), height);
-      context.lineTo(i * (stepSize*6), height - 7);
-      context.stroke();
-    }
-    context.restore();
-
 // ====== freezing and hot lines
     i = 80;       // ========== hot line, at 80 degrees
     context.save();
@@ -371,6 +359,18 @@ Module.register("MMM-forecast-io", {
       }
     }
 
+// ===== 6hr tick lines
+    var tickCount = Math.round(width / (stepSize*6));
+    context.save();
+    context.strokeStyle = 'gray';
+    context.lineWidth = 2;
+    for (i = 1; i < tickCount; i++) {             
+      context.moveTo(i * (stepSize*6), height);
+      context.lineTo(i * (stepSize*6), height - 7);
+      context.stroke();
+    }
+    context.restore();
+    
     return element;
   },
 
