@@ -382,6 +382,7 @@ Module.register("MMM-forecast-io", {
 // ===== 6hr tick lines
     var tickCount = Math.round(width / (stepSize*6));
     context.save();
+    context.beginPath();
     context.strokeStyle = 'gray';
     context.lineWidth = 2;
     for (i = 1; i < tickCount; i++) {             
