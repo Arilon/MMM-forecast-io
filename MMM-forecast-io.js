@@ -21,8 +21,16 @@ Module.register("MMM-forecast-io", {
     maxDaysForecast: 7,
     showPrecipitationGraph: true,
     precipitationGraphWidth: 400,
+    precipitationGraphHeight: 120, // 120 by default
     showWind: true,
     showSunrise: true,
+    showTempGraph: true, //whether to show temp line, if false showHot and showFreeze have no effect
+    showHot: true, 
+    hotFahrenheit: 80, //hot line in fahrenheit, automatically adjusted if recieving Celsius temps. 80F ~= 26.666C
+    showFreeze: true,
+    freezeFahrenheit: 32, //freeze line in fahrenheit... It's 0 Celsius. Can't see why you'd want to change it, but, why not have the option.
+    precipitationGraphFahrenheitLow: -10, //lowest temp on the graph in fahrenheit. -10F ~= -23.333C
+    precipitationGraphFahrenheitHigh: 110, //highest temp on the graph in fahrenheit. 110F ~= 43.333C
     unitTable: {
       'default':  'auto',
       'metric':   'si',
@@ -226,14 +234,17 @@ Module.register("MMM-forecast-io", {
   renderPrecipitationGraph: function () {
     var i;
     var width = this.config.precipitationGraphWidth; 
-    var height = Math.round(width * 0.3);            // 120 by default
+    var height = this.config.precipitationGraphHeight;            // 120 by default
     var element = document.createElement('canvas');
     element.className = "precipitation-graph";
     element.width  = width;
     element.height = height;
     var context = element.getContext('2d');
 
-    var precipitationGraphYShift = -10;  // 0..120 range, thus graph -10 to 110 degrees
+
+
+    var precipitationGraphTempScale = height / (this.config.precipitationGraphFahrenheitHigh - this.config.precipitationGraphFahrenheitLow); // scale the temp graph
+    var precipitationGraphYShift = this.config.precipitationGraphFahrenheitLow; // adjust where 0 is for the temp line
     var stepSize = (width / (24+12) );    // pixels per hour for 1.5 days
 
 // ======= shade blocks for daylight hours
@@ -277,22 +288,26 @@ Module.register("MMM-forecast-io", {
     context.restore();
 
 // ====== freezing and hot lines
-    i = 80;       // ========== hot line, at 80 degrees
     context.save();
     context.beginPath();
     context.setLineDash([5, 10]);
-    context.lineWidth = 1;
-    context.strokeStyle = 'red';
-    context.moveTo(0, height - i + precipitationGraphYShift);
-    context.lineTo(width, height - i + precipitationGraphYShift);
-    context.stroke();
+    if (this.config.showTempGraph && this.config.showHot) {
+        i = this.config.hotFahrenheit;       // ========== hot line
+        context.lineWidth = 1;
+        context.strokeStyle = 'red';
+        context.moveTo(0, height - (i - precipitationGraphYShift) * precipitationGraphTempScale);
+        context.lineTo(width, height - (i - precipitationGraphYShift) * precipitationGraphTempScale);
+        context.stroke();
+    }
 
-    i = 32;         // ====== freezing line
-    context.beginPath();
-    context.strokeStyle = 'blue';
-    context.moveTo(0, height - i + precipitationGraphYShift);
-    context.lineTo(width, height - i + precipitationGraphYShift);
-    context.stroke();
+    if (this.config.showTempGraph && this.config.showFreeze) {
+        i = this.config.freezeFahrenheit;         // ====== freezing line
+        context.beginPath();
+        context.strokeStyle = 'blue';
+        context.moveTo(0, height - (i - precipitationGraphYShift) * precipitationGraphTempScale);
+        context.lineTo(width, height - (i - precipitationGraphYShift) * precipitationGraphTempScale);
+        context.stroke();
+    }
     context.restore();
 
 // ====== graph of precipIntensity  (inches of liquid water per hour)
@@ -323,52 +338,57 @@ Module.register("MMM-forecast-io", {
     var tempTemp;
 
     context.save();
-    context.strokeStyle = 'gray';
-    context.lineWidth = 2;
-    context.moveTo(0, height);
+    if (this.config.showTempGraph) {
+        context.strokeStyle = 'gray';
+        context.lineWidth = 2;
+        context.moveTo(0, height);
 
-    var stepSizeTemp = Math.round(width / (24+12));
-    var tempX;
-    var tempY;
+        var stepSizeTemp = Math.round(width / (24+12));
+        var tempX;
+        var tempY;
+        var tempNow;
 
-    for (i = 0; i < (24+12+1); i++) {
-      tempX = i * stepSizeTemp;
-      tempY = height - (this.weatherData.hourly.data[i].temperature + 10);
+        for (i = 0; i < (24+12+1); i++) {
+          if (this.weatherData.flags.units == "us") tempNow = this.weatherData.hourly.data[i].temperature;
+          else tempNow = this.weatherData.hourly.data[i].temperature * 1.8 + 32;
+          tempX = i * stepSizeTemp;
+          tempY = height - (tempNow - precipitationGraphYShift) * precipitationGraphTempScale;
 
-      context.lineTo( tempX, tempY );       // line from last hour to this hour
-      context.stroke();
+          context.lineTo( tempX, tempY );       // line from last hour to this hour
+          context.stroke();
 
-      context.beginPath();
-      context.arc(tempX, tempY, 1 ,0,2*Math.PI);          // hour-dots
-      context.stroke();
-    }
-    context.restore();
+          context.beginPath();
+          context.arc(tempX, tempY, 1 ,0,2*Math.PI);          // hour-dots
+          context.stroke();
+        }
+        context.restore();
 
+        for (i = 0; i < (24+12+1); i++) {     // text label for temperature on graph
+          if ((i % 2) == 1) {
+            if (this.weatherData.flags.units == "us") tempNow = this.weatherData.hourly.data[i].temperature;
+            else tempNow = this.weatherData.hourly.data[i].temperature * 1.8 + 32;
+            tempX = (i * stepSizeTemp) - 5;
+            tempY = height - ((tempNow - precipitationGraphYShift) * precipitationGraphTempScale + 5);
+            tempTemp = Math.round( this.weatherData.hourly.data[i].temperature );
 
-    var timeLabel;
-    for (i = 0; i < (24+12+1); i++) {     // text label for temperature on graph
-      if ((i % 2) == 1) {
-        tempX = (i * stepSizeTemp) - 5;
-        tempY = height - (this.weatherData.hourly.data[i].temperature + 10 + 5);
-        tempTemp = Math.round( this.weatherData.hourly.data[i].temperature );
+            context.beginPath();
+            context.font = "10px Arial";
+            context.fillStyle = "grey";
+            context.fillText( tempTemp, tempX, tempY );
+            context.stroke();
 
-        context.beginPath();
-        context.font = "10px Arial";
-        context.fillStyle = "grey";
-        context.fillText( tempTemp, tempX, tempY );
-        context.stroke();
+    //        var timeLabel;
+    //        timeLabel = this.weatherData.hourly.data[i].time;
+    //        timeLabel = moment(timeLabel*1000).format("ha");
+    //        timeLabel = timeLabel.replace("m", " ");
+    //        context.beginPath();
+    //        context.font = "10px Arial";
+    //        context.fillStyle = "grey";
+    //        context.fillText( timeLabel , tempX, 10 );
+    //        context.stroke();
 
-
-//        timeLabel = this.weatherData.hourly.data[i].time;
-//        timeLabel = moment(timeLabel*1000).format("ha");
-//        timeLabel = timeLabel.replace("m", " ");
-//        context.beginPath();
-//        context.font = "10px Arial";
-//        context.fillStyle = "grey";
-//        context.fillText( timeLabel , tempX, 10 );
-//        context.stroke();
-
-      }
+          }
+        }
     }
 
     return element;
