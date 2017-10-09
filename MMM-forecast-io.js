@@ -31,6 +31,7 @@ Module.register("MMM-forecast-io", {
      *  Light is a third of the way up, heavy is two thirds.                                */
     showWind: true,
     showSunrise: true,
+    showSunriseGraph: true,
     showTempGraph: true, //whether to show temp line, if false showHot and showFreeze have no effect
     showHot: true,
     hotFahrenheit: 80, //hot line in fahrenheit, automatically adjusted if recieving Celsius temps. 80F ~= 26.666C
@@ -253,32 +254,34 @@ Module.register("MMM-forecast-io", {
     var stepSize = (width / (24 + 12)); // pixels per hour for 1.5 days
 
     // ======= shade blocks for daylight hours
-    var now = new Date();
-    now = Math.floor(now / 1000); // current time in Unix format
-    var timeUnilSunrise;
-    var timeUnilSunset;
-    var sunrisePixels; // daytime shade box location on graph
-    var sunsetPixels;
+    if (this.config.showSunriseGraph) {
+      var now = new Date();
+      now = Math.floor(now / 1000); // current time in Unix format
+      var timeUnilSunrise;
+      var timeUnilSunset;
+      var sunrisePixels; // daytime shade box location on graph
+      var sunsetPixels;
 
-    context.save();
-    for (i = 0; i < 3; i++) { // 3 days ([0]..[2])
-      timeUnilSunrise = (this.weatherData.daily.data[i].sunriseTime - now);
-      timeUnilSunset = (this.weatherData.daily.data[i].sunsetTime - now);
+      context.save();
+      for (i = 0; i < 3; i++) { // 3 days ([0]..[2])
+        timeUnilSunrise = (this.weatherData.daily.data[i].sunriseTime - now);
+        timeUnilSunset = (this.weatherData.daily.data[i].sunsetTime - now);
 
-      if ((timeUnilSunrise < 0) && (i == 0)) {
-        timeUnilSunrise = 0; // sunrise has happened already today
+        if ((timeUnilSunrise < 0) && (i == 0)) {
+          timeUnilSunrise = 0; // sunrise has happened already today
+        }
+        if ((timeUnilSunset < 0) && (i == 0)) {
+          timeUnilSunset = 0; // sunset has happened already today
+        }
+
+        sunrisePixels = (timeUnilSunrise / 60 / 60) * stepSize;
+        sunsetPixels = (timeUnilSunset / 60 / 60) * stepSize;
+
+        context.fillStyle = "#323232";
+        context.fillRect(sunrisePixels, 0, (sunsetPixels - sunrisePixels), height);
       }
-      if ((timeUnilSunset < 0) && (i == 0)) {
-        timeUnilSunset = 0; // sunset has happened already today
-      }
-
-      sunrisePixels = (timeUnilSunrise / 60 / 60) * stepSize;
-      sunsetPixels = (timeUnilSunset / 60 / 60) * stepSize;
-
-      context.fillStyle = "#323232";
-      context.fillRect(sunrisePixels, 0, (sunsetPixels - sunrisePixels), height);
+      context.restore();
     }
-    context.restore();
 
     // ====== freezing and hot lines
     context.save();
