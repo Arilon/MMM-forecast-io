@@ -22,6 +22,13 @@ Module.register("MMM-forecast-io", {
     showPrecipitationGraph: true,
     precipitationGraphWidth: 400,
     precipitationGraphHeight: 120, // 120 by default
+    precipFillColor: 'blue', // color to make precipitation graph
+    precipLineColor: 'gray',
+    minPrecipCutoff: 0.0019, //in inches per hour. Below this rain is considered to be not happening. About 0.05mm/h
+    lightPrecipCutoff: 0.1, //in inches per hour. Below this is "light" rain. US Meterological Society defines this as 0.1. About 2.5mm/h. 1/3rd up the graph
+    heavyPrecipCutoff: 0.4, //in inches per hour. Above this is "heavy" rain. UK MetOffice defines this as 0.4. About 10mm/h. 2/3rds up the graph
+/*  The above three values are used to find a scale for the precipitation graph.           *
+ *  Light is a third of the way up, heavy is two thirds.                                */
     showWind: true,
     showSunrise: true,
     showTempGraph: true, //whether to show temp line, if false showHot and showFreeze have no effect
@@ -302,21 +309,34 @@ Module.register("MMM-forecast-io", {
     var data = this.weatherData.hourly.data;
 
     context.save();
-    context.strokeStyle = 'blue';
-    context.fillStyle = 'blue';
+    context.strokeStyle = this.config.precipLineColor;
+    context.lineWidth = 2;
+    context.fillStyle = this.config.precipFillColor;
 //    context.globalCompositeOperation = 'xor';
     context.beginPath();
-    context.moveTo(0, height);
+    context.moveTo(0, height+2);
     var intensity;
+
     for (i = 0; i < data.length; i++) {
-      intensity = 0;
-      if (data[i].precipIntensity > 0) {
-        intensity = (data[i].precipIntensity * height * 5) + 4;   // make trace stand out
-      }
-      context.lineTo(i * stepSize, height - intensity);
+      //convert to inches
+      if (this.weatherData.flags.units == "us") intensity = data[i].precipIntensity; // make trace stand out
+      else intensity = data[i].precipIntensity / 25.4;   //convert metric units to inches
+
+      //height on precip graph
+      if (intensity <= this.config.minPrecipCutoff) intensity = 0; //barely any rain
+      else if (intensity <= this.config.lightPrecipCutoff) intensity = intensity * 10/3; // light rain
+      else if (intensity <= this.config.heavyPrecipCutoff) intensity = 10/3 + (intensity - 0.1) * (10/3); // moderate rain
+      else intensity = 2*10/3 + (intensity-0.4)*(10/3); // heavy rain
+
+      //scale based on graph height
+      intensity = intensity * height;
+      //move linr
+      context.lineTo(i * stepSize, height - intensity + 1);
+
     }
-    context.lineTo(width, height);
+    context.lineTo(width, height+2);
     context.closePath();
+    context.stroke();
     context.fill();
     context.restore();
 
@@ -391,7 +411,7 @@ Module.register("MMM-forecast-io", {
       context.stroke();
     }
     context.restore();
-    
+
     return element;
   },
 
