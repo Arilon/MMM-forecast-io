@@ -329,8 +329,8 @@ Module.register("MMM-forecast-io", {
       // height on precip graph
       if (intensity <= this.config.minPrecipCutoff) intensity = 0; //barely any rain
       else if (intensity <= this.config.lightPrecipCutoff) intensity = intensity * 10 / 3; // light rain
-      else if (intensity <= this.config.heavyPrecipCutoff) intensity = 10 / 3 + (intensity - 0.1) * (10 / 3); // moderate rain
-      else intensity = 2 * 10 / 3 + (intensity - 0.4) * (10 / 3); // heavy rain
+      else if (intensity <= this.config.heavyPrecipCutoff) intensity = 1/3 + (intensity - 0.1) * (10 / 3); // moderate rain
+      else intensity = 2/3 + (intensity - 0.4) * (10 / 3); // heavy rain
 
       // scale based on graph height
       intensity = intensity * height;
