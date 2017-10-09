@@ -20,6 +20,8 @@ Module.register("MMM-forecast-io", {
     showForecast: true,
     maxDaysForecast: 7,
     showPrecipitationGraph: true,
+    precipitationGraphHours: 36, // hours to make the precipitation graph cover. More than 48 is pointless because we don't have that data.
+    precipitationGraphTickHours: 6, // how many hours between each tick along the bottom of the graph
     precipitationGraphWidth: 400,
     precipitationGraphHeight: 120, // 120 by default
     precipFillColor: 'blue', // color to make precipitation graph
@@ -251,7 +253,7 @@ Module.register("MMM-forecast-io", {
 
     var precipitationGraphTempScale = height / (this.config.precipitationGraphFahrenheitHigh - this.config.precipitationGraphFahrenheitLow); // scale the temp graph
     var precipitationGraphYShift = this.config.precipitationGraphFahrenheitLow; // adjust where 0 is for the temp line
-    var stepSize = (width / (24 + 12)); // pixels per hour for 1.5 days
+    var stepSize = (width / this.config.precipitationGraphHours); // pixels per hour
 
     // ======= shade blocks for daylight hours
     if (this.config.showSunriseGraph) {
@@ -263,7 +265,7 @@ Module.register("MMM-forecast-io", {
       var sunsetPixels;
 
       context.save();
-      for (i = 0; i < 3; i++) { // 3 days ([0]..[2])
+      for (i = 0; i < (Math.ceil(this.config.precipitationGraphHours/24+1)); i++) { // What is the max days we might need?
         timeUnilSunrise = (this.weatherData.daily.data[i].sunriseTime - now);
         timeUnilSunset = (this.weatherData.daily.data[i].sunsetTime - now);
 
@@ -343,7 +345,7 @@ Module.register("MMM-forecast-io", {
 
 
     // ========= graph of temp
-    var numMins = 60 * 24 * 1.5; // minutes in graph, 1.5 days
+    var numMins = 60 * this.config.precipitationGraphHours; // minutes in graph
     var tempTemp;
 
     context.save();
@@ -352,12 +354,12 @@ Module.register("MMM-forecast-io", {
       context.lineWidth = 2;
       context.moveTo(0, height);
 
-      var stepSizeTemp = Math.round(width / (24 + 12));
+      var stepSizeTemp = Math.round(width / this.config.precipitationGraphHours);
       var tempX;
       var tempY;
       var tempNow;
 
-      for (i = 0; i < (24 + 12 + 1); i++) {
+      for (i = 0; i < (this.config.precipitationGraphHours + 1) && i < this.weatherData.hourly.data.length; i++) {
         if (this.weatherData.flags.units == "us") tempNow = this.weatherData.hourly.data[i].temperature;
         else tempNow = this.weatherData.hourly.data[i].temperature * 1.8 + 32;
         tempX = i * stepSizeTemp;
@@ -372,7 +374,7 @@ Module.register("MMM-forecast-io", {
       }
       context.restore();
 
-      for (i = 0; i < (24 + 12 + 1); i++) { // text label for temperature on graph
+      for (i = 0; i < (this.config.precipitationGraphHours + 1) && i < this.weatherData.hourly.data.length; i++) { // text label for temperature on graph
         if ((i % 2) == 1) {
           if (this.weatherData.flags.units == "us") tempNow = this.weatherData.hourly.data[i].temperature;
           else tempNow = this.weatherData.hourly.data[i].temperature * 1.8 + 32;
@@ -401,14 +403,14 @@ Module.register("MMM-forecast-io", {
     }
 
     // ===== 6hr tick lines
-    var tickCount = Math.round(width / (stepSize * 6));
+    var tickCount = Math.round(width / (stepSize * (this.config.precipitationGraphHours / this.config.precipitationGraphTickHours)));
     context.save();
     context.beginPath();
     context.strokeStyle = 'gray';
     context.lineWidth = 2;
     for (i = 1; i < tickCount; i++) {
-      context.moveTo(i * (stepSize * 6), height);
-      context.lineTo(i * (stepSize * 6), height - 7);
+      context.moveTo(i * (stepSize * this.config.precipitationGraphTickHours), height);
+      context.lineTo(i * (stepSize * this.config.precipitationGraphTickHours), height - 7);
       context.stroke();
     }
     context.restore();
