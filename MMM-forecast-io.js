@@ -24,6 +24,7 @@ Module.register("MMM-forecast-io", {
     precipitationGraphTickHours: 6, // how many hours between each tick along the bottom of the graph
     precipitationGraphWidth: 400,
     precipitationGraphHeight: 120, // 120 by default
+    showPrecipLevels: false, // whether to show 1/3 and 2/3 levels for the graph
     precipFillColor: 'blue', // color to make precipitation graph
     precipLineColor: 'gray',
     minPrecipCutoff: 0.0019, //in inches per hour. Below this rain is considered to be not happening. About 0.05mm/h
@@ -344,7 +345,7 @@ Module.register("MMM-forecast-io", {
     context.restore();
 
 
-    // ========= graph of temp
+    // ======= graph of temp
     var numMins = 60 * this.config.precipitationGraphHours; // minutes in graph
     var tempTemp;
 
@@ -402,7 +403,22 @@ Module.register("MMM-forecast-io", {
       }
     }
 
-    // ===== 6hr tick lines
+    // ======= Precipitation Level Dividers
+    if (this.config.showPrecipLevels) {
+      var third = Math.round(height / 3);
+      context.save();
+      context.strokeStyle = 'gray';
+      context.setLineDash([5, 15]);
+      context.lineWidth = 1;
+      for (i = 1; i < 3; i++) {
+        context.moveTo(0, i * third);
+        context.lineTo(width, i * third);
+        context.stroke();
+      }
+      context.restore();
+    }
+
+    // ======= 6hr tick lines
     var tickCount = Math.round(width / (stepSize * (this.config.precipitationGraphHours / this.config.precipitationGraphTickHours)));
     context.save();
     context.beginPath();
