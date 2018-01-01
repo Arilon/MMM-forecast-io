@@ -233,7 +233,7 @@ Module.register("MMM-forecast-io", {
     element.height = height;
     var context = element.getContext('2d');
 
-    var precipitationGraphYShift = -10;  // 0..120 range, thus graph -10 to 110 degrees
+    var precipitationGraphYShift = -10;  // 0..120 range, thus graph -30 to 80 degrees
     var stepSize = (width / (24+12) );    // pixels per hour for 1.5 days
 
 // ======= shade blocks for daylight hours
@@ -265,7 +265,7 @@ Module.register("MMM-forecast-io", {
     context.restore();
 
 // ====== freezing and hot lines
-    i = 80;       // ========== hot line, at 80 degrees
+    i = 60;       // ========== hot line, at 30 degrees
     context.save();
     context.beginPath();
     context.setLineDash([5, 10]);
@@ -275,7 +275,7 @@ Module.register("MMM-forecast-io", {
     context.lineTo(width, height - i + precipitationGraphYShift);
     context.stroke();
 
-    i = 32;         // ====== freezing line
+    i = 0;         // ====== freezing line
     context.beginPath();
     context.strokeStyle = 'blue';
     context.moveTo(0, height - i + precipitationGraphYShift);
@@ -321,7 +321,7 @@ Module.register("MMM-forecast-io", {
 
     for (i = 0; i < (24+12+1); i++) {
       tempX = i * stepSizeTemp;
-      tempY = height - (this.weatherData.hourly.data[i].temperature + 10);
+      tempY = height - 2*(this.weatherData.hourly.data[i].temperature+10);
 
       context.lineTo( tempX, tempY );       // line from last hour to this hour
       context.stroke();
@@ -331,7 +331,6 @@ Module.register("MMM-forecast-io", {
       context.stroke();
     }
     context.restore();
-
 
     var timeLabel;
     for (i = 0; i < (24+12+1); i++) {     // text label for temperature on graph
@@ -346,15 +345,13 @@ Module.register("MMM-forecast-io", {
         context.fillText( tempTemp, tempX, tempY );
         context.stroke();
 
-
-//        timeLabel = this.weatherData.hourly.data[i].time;
-//        timeLabel = moment(timeLabel*1000).format("ha");
-//        timeLabel = timeLabel.replace("m", " ");
-//        context.beginPath();
-//        context.font = "10px Arial";
-//        context.fillStyle = "grey";
-//        context.fillText( timeLabel , tempX, 10 );
-//        context.stroke();
+        timeLabel = this.weatherData.hourly.data[i].time;
+        timeLabel = moment(timeLabel*1000).format("HH");
+        context.beginPath();
+        context.font = "10px Arial";
+        context.fillStyle = "grey";
+        context.fillText( timeLabel , tempX, 10 );
+        context.stroke();
 
       }
     }
