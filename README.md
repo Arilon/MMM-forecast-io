@@ -7,7 +7,7 @@ Unfortunately, Geolocation will currently not work with MagicMirror's Electron-b
 https://github.com/electron/electron/issues/6648
 If you are using MagicMirror headless with your own browser this shouldn't be a problem.
 
-Note also that the graph is based on degrees fahrenheit.  If you use another unit, you will probably have to adjust the code for proper vertical scaling.
+Note also that the graph is based on degrees celius.
 
 This module uses white icons by default.  If you prefer color coded icons, merge the contents of the "Color-icons.md" file into your "css\custom.css" file. 
 

@@ -233,7 +233,7 @@ Module.register("MMM-forecast-io", {
     element.height = height;
     var context = element.getContext('2d');
 
-    var precipitationGraphYShift = -10;  // 0..120 range, thus graph -30 to 80 degrees
+    var precipitationGraphYShift = 0;  // 0..120 range, thus graph -30 to 80 degrees
     var stepSize = (width / (24+12) );    // pixels per hour for 1.5 days
 
 // ======= shade blocks for daylight hours
